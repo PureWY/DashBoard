@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { connect } from 'dva';
-import { Table, Pagination, Popconfirm, Button, Modal, Form, Input } from 'antd';
+import { Table, Pagination, Popconfirm, Button, Modal, message } from 'antd';
 import styles from './Users.css';
 import { PAGE_SIZE } from '../../constants';
 import WarpForm from '../Form/Form'
@@ -8,6 +8,13 @@ import WarpForm from '../Form/Form'
 function Users({ dispatch, loading, userData }) {
   const { list: dataSource, total, page: current, modalStatus, confirmLoading } = userData
   let chirldRef = null
+  let addOrUpdate = null
+
+  const [updateData,setData] = useState({
+    name: '',
+    email: '',
+    website: ''
+  })
 
   function deleteHandler(id) {
     console.warn(`TODO: ${id}`);
@@ -19,10 +26,19 @@ function Users({ dispatch, loading, userData }) {
     })
   }
 
-  function updateHandler(id) {
+  function updateHandler(record) {
+    addOrUpdate = 'update'
+    setData({ ...record })
+    dispatch({
+      type: 'users/loaded',
+      payload: {
+        modalStatus: true
+      }
+    })
   }
 
-  function showModal(){
+  function addHandler(){
+    addOrUpdate = 'add'
     dispatch({
       type: 'users/loaded',
       payload: {
@@ -41,7 +57,20 @@ function Users({ dispatch, loading, userData }) {
   }
     
   function handleOk(){
-    chirldRef.checkForm()
+    chirldRef.checkForm().then((res) => {
+      dispatch({
+        type: addOrUpdate === 'add' ?  'users/add' : 'users/update',
+        payload: {
+          userInfo: { ...res }
+        },
+        callback: res => {
+          res.id === '0' ? message.warning(res.message)
+          : message.success(res.message)
+        }
+      })
+    }).catch((error) => {
+      console.log(error)
+    })
   }
 
   function AddModal(){
@@ -53,7 +82,7 @@ function Users({ dispatch, loading, userData }) {
           confirmLoading={confirmLoading}
           onCancel={handleCancel}
         >
-        <WarpForm onRef={(child) => { chirldRef = child }}></WarpForm>
+        <WarpForm updateData={updateData} onRef={(child) => { chirldRef = child }}></WarpForm>
       </Modal>
     )
   }
@@ -89,9 +118,9 @@ function Users({ dispatch, loading, userData }) {
     {
       title: 'Update',
       key: 'update',
-      render: (text, { id }) => (
+      render: (text, record, { id }) => (
         <span className={styles.operation}>
-          <Popconfirm title="Confirm to update?" onConfirm={updateHandler.bind(null, id)}>
+          <Popconfirm title="Confirm to update?" onConfirm={updateHandler.bind(null, record)}>
             <a href="">Update</a>
           </Popconfirm>
         </span>
@@ -102,7 +131,7 @@ function Users({ dispatch, loading, userData }) {
   return (
     <div className={styles.normal}>
       <div>
-        <Button className={styles.addBtn} type="primary" size="small" onClick={showModal}>添加</Button>
+        <Button className={styles.addBtn} type="primary" size="small" onClick={addHandler}>添加</Button>
         <Table
           columns={columns}
           dataSource={dataSource}

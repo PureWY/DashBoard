@@ -12,11 +12,10 @@ export default {
 
   reducers: {
     loaded(state, { payload }){
-      console.log(payload)
       return { ...state, ...payload }
     },
 
-    save(state, { payload: { data: list, total, page }}) {
+    query(state, { payload: { data: list, total, page }}) {
       return { ...state, list, total, page };
     },
 
@@ -25,6 +24,50 @@ export default {
         item.id !== id
       ))
       return { ...state, list }
+    },
+
+    update(state, { payload: { userInfo }, callback}) {
+      let list = state.list.map(item => {
+        if(item.name === userInfo.name){
+          item = { 
+            ...item,
+            ...userInfo 
+          }
+        }
+        return item
+      })
+      callback({
+        id: '1',
+        type: 'success',
+        message: '用户修改成功'
+      })
+      return { ...state, list, modalStatus: false }
+    },
+
+    add(state, { payload: { userInfo }, callback}) {
+      let isExist = state.list.findIndex((item) => {
+        return item.name === userInfo.name
+      })
+      if(isExist > -1){
+        callback({
+          id: '0',
+          type: 'error',
+          message: '该用户已存在'
+        })
+        return { ...state, modalStatus: true }
+      }else{
+        let id = new Date().getTime()
+        state.list.push({
+          ...userInfo,
+          id
+        })
+        callback({
+          id: '1',
+          type: 'success',
+          message: '用户添加成功'
+        })
+        return { ...state, modalStatus: false } 
+      }
     }
   },
 
@@ -49,7 +92,7 @@ export default {
       }]
 
       yield put({
-        type: 'save',
+        type: 'query',
         payload: {
           data, 
           total: 3, 

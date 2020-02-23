@@ -4,13 +4,8 @@ import { Form, Input, Button } from 'antd';
 
 const formItemLayout = {
   labelCol: { span: 4 },
-  wrapperCol: { span: 8 },
+  wrapperCol: { span: 12 },
 }
-
-const formTailLayout = {
-  labelCol: { span: 4 },
-  wrapperCol: { span: 8, offset: 4 },
-};
 
 class FormComponent extends React.Component{
   state = {
@@ -22,11 +17,15 @@ class FormComponent extends React.Component{
   } 
 
   checkForm = () => {
-    this.props.form.validateFields(err => {
-      if (!err) {
-        console.info('success');
-      }
-    });
+    return new Promise((resolve,reject) => {
+      this.props.form.validateFields((err,values) => {
+        if (!err) {
+          resolve(values)
+        }else{
+          reject('error')
+        }
+      })
+    })
   };
 
   handleChange = e => {
@@ -42,20 +41,23 @@ class FormComponent extends React.Component{
 
   render() {
     const { getFieldDecorator } = this.props.form;
+    const formData = this.props.updateData
     return (
       <div>
         <Form.Item {...formItemLayout} label="Name">
             {getFieldDecorator('name', {
+              initialValue: formData.name,
               rules: [
                 {
                   required: true,
                   message: 'Please input your name',
                 },
               ],
-            })(<Input placeholder="Please input your name" />)}
+            })(<Input disabled={formData.name ? true : false} placeholder="Please input your name" />)}
           </Form.Item>
           <Form.Item {...formItemLayout} label="Email">
             {getFieldDecorator('email', {
+              initialValue: formData.email,
               rules: [
                 {
                   required: true,
@@ -65,10 +67,10 @@ class FormComponent extends React.Component{
             })(<Input placeholder="Please input your email" />)}
           </Form.Item>
           <Form.Item {...formItemLayout} label="Website">
-            {getFieldDecorator('website')(<Input placeholder="Please input your website" />)}
+            {getFieldDecorator('website',{
+              initialValue: formData.website,
+            })(<Input placeholder="Please input your website" />)}
           </Form.Item>
-          <Form.Item {...formTailLayout}>
-        </Form.Item>
       </div>
     );
   }
